@@ -36,7 +36,7 @@ contract ERC20Token is ERC20 {
         totalSupply = _totalSupply;
 
         // Give initial total supply to creator
-        balances[msg.sender] += totalSupply;
+        balances[msg.sender] = totalSupply;
     }
 
     // Transfer from your address (msg.sender) to another address
