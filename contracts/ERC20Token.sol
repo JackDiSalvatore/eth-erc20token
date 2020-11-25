@@ -41,7 +41,7 @@ contract ERC20Token is ERC20 {
 
     // Transfer from your address (msg.sender) to another address
     function transfer(address to, uint value) public returns(bool) {
-        require(balances[msg.sender] >= value, 'funds not available');
+        require(balances[msg.sender] >= value, 'insufficient balance');
         balances[msg.sender] -= value;
         balances[to] += value;
         emit Transfer(msg.sender, to, value);

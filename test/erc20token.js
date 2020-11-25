@@ -86,8 +86,17 @@ contract('ERC20Token', async (accounts) => {
   })
 
   it('Should not let the sender overdraw there balance', async () => {
-    //const value = initialBalance.add(web3.utils.toWei('100'))
-  })
+    const value = initialBalance.add(tokens(1))
+    const senderBalance = toBN(await token.balanceOf(deployer))
 
+    console.log('senderBalance: ' + senderBalance)
+    console.log('value: ' + value)
+
+    await expectRevert(
+        // is this a "call" ?
+        token.transfer(recipient, value, {from: deployer}),
+        'insufficient balance'
+    )
+  })
 
 })
