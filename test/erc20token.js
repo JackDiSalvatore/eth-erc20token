@@ -1,15 +1,26 @@
+//import { tokens } from './helpers'
+
+// Notes:
+// "web3.utils.toWei": Converts any ether value value into wei.
+// "web3.utils.toBN": Will safely convert any given value 
+//                    (including BigNumber.js instances) into a BN.js instance,
+//                    for handling big numbers in JavaScript.
+const tokens = (value) => {
+  return web3.utils.toBN(
+    web3.utils.toWei(value.toString(), 'ether')
+  )
+}
+
+const toBN = (value) => {
+  return web3.utils.toBN(value)
+}
+
 const { expectRevert, expectEvent } = require('@openzeppelin/test-helpers');
 const ERC20Token = artifacts.require('ERC20Token')
 
 contract('ERC20Token', async (accounts) => {
-  // Notes:
-  // "web3.utils.toWei": Converts any ether value value into wei.
-  // "web3.utils.toBN": Will safely convert any given value 
-  //                    (including BigNumber.js instances) into a BN.js instance,
-  //                    for handling big numbers in JavaScript.
-
   let token;
-  let initialBalance = web3.utils.toBN(web3.utils.toWei('1'));
+  let initialBalance = tokens(1000000000);  // 1,000,000,000 * 1.0 * 10^18
 
   let deployer = accounts[0]
   let sender = accounts[1]
@@ -26,8 +37,9 @@ contract('ERC20Token', async (accounts) => {
     const name = await token.name()
     const symbol = await token.symbol()
     const decimals = await token.decimals()
-    const totalSupply = await token.totalSupply()
+    const totalSupply = toBN(await token.totalSupply())
 
+    console.log('initialBalance: ' + initialBalance)
     console.log('STATS')
     console.log('name: ' + name + '\nsymbol: ' + symbol +
                 '\ndecimals: ' + decimals + '\ntotalSupply: ' + totalSupply)
@@ -42,14 +54,14 @@ contract('ERC20Token', async (accounts) => {
   })
 
   it('Should give the total supply to the deployer account', async () => {
-    const balance = await token.balanceOf(deployer)
+    const balance = toBN(await token.balanceOf(deployer))
     assert(balance.eq(initialBalance), 'incorrect initial balance')
   })
 
   it('Should transfer balances from one account to another', async () => {
-    const value = web3.utils.toBN(100)	// 100 Wei
-    const senderBalanceBefore = await token.balanceOf(deployer)
-    const recipientBalanceBefore = await token.balanceOf(recipient)
+    const value = tokens(100)	// 100 Wei
+    const senderBalanceBefore = toBN(await token.balanceOf(deployer))
+    const recipientBalanceBefore = toBN(await token.balanceOf(recipient))
 
     console.log('deployer balance before: ' + senderBalanceBefore)
     console.log('recipient balance before: ' + recipientBalanceBefore)
@@ -57,8 +69,8 @@ contract('ERC20Token', async (accounts) => {
 
     const receipt = await token.transfer(recipient, value, {from: deployer})
 
-    const senderBalanceAfter = await token.balanceOf(deployer)
-    const recipientBalanceAfter = await token.balanceOf(recipient)
+    const senderBalanceAfter = toBN(await token.balanceOf(deployer))
+    const recipientBalanceAfter = toBN(await token.balanceOf(recipient))
 
     // sender: 10000 - 1 = 9999
     assert(senderBalanceBefore.sub(senderBalanceAfter).eq(value),
@@ -70,7 +82,12 @@ contract('ERC20Token', async (accounts) => {
       from: deployer,
       to: recipient,
       tokens: value
-    });
+    })
   })
+
+  it('Should not let the sender overdraw there balance', async () => {
+    //const value = initialBalance.add(web3.utils.toWei('100'))
+  })
+
 
 })
