@@ -62,6 +62,7 @@ contract ERC20Token is ERC20 {
     // Approve thrid account to spend on your behalf
     function approve(address spender, uint value) public returns(bool) {
         require(msg.sender != spender, 'cannot set allowance on yourself');
+        require(balances[msg.sender] >= value, 'sender does not have sufficient funds');
         allowed[msg.sender][spender] = value;
         emit Approval(msg.sender, spender, value);
         return true;

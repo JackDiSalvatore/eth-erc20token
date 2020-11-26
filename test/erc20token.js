@@ -25,6 +25,7 @@ contract('ERC20Token', async (accounts) => {
   let deployer = accounts[0]
   let sender = accounts[1]
   let recipient = accounts[2]
+  let designatedSpender = accounts[3]
   console.log('deployer: ' + deployer)
   console.log('sender: ' + sender)
   console.log('recipient: ' + recipient)
@@ -97,6 +98,61 @@ contract('ERC20Token', async (accounts) => {
         token.transfer(recipient, value, {from: deployer}),
         'insufficient balance'
     )
+  })
+
+  describe('Should let designated spender spend allowance', async () => {
+    beforeEach('Send some tokens to a new account', async () => {
+      const value = tokens(10)
+      await token.transfer(sender, value, {from: deployer})
+    })
+
+    beforeEach('Designate an approved spender', async () => {
+      const value = tokens(5)
+      const senderBalance = await token.balanceOf(sender)
+      console.log('senderBalance: ' + senderBalance)
+      const receipt = await token.approve(designatedSpender, value, {from: sender})
+      await expectEvent(receipt, 'Approval', {
+        _owner: sender,
+        _spender: designatedSpender, 
+        _value: value
+      })
+    })
+
+    // Idk if this is really in the ERC20 standard, but I am adding it in
+    it('Should not let the sender approve more allowance tokens then they own', async () => {
+      await expectRevert(
+        token.approve(designatedSpender, tokens(11), {from: sender}),
+        'sender does not have sufficient funds'
+      )
+    })
+
+    it('Should let the approved spender spend the allowance', async () => {
+      const receipt = await token.transferFrom(sender, recipient, tokens(5), {from: designatedSpender})
+      const allowance = toBN(await token.allowance(sender, designatedSpender))
+
+      await expectEvent(receipt, 'Transfer', {
+        from: sender,
+        to: recipient,
+        tokens: tokens(5)
+      })
+      assert(allowance.eq(tokens(0)), 'allowance not all spent ' + allowance)
+    })
+
+    it('Should not let the approved spender spend more than the allowance', async() => {
+      const value = toBN(await token.allowance(sender, designatedSpender)).add(tokens(1))
+
+      await expectRevert(
+        token.transferFrom(sender, recipient, value, {from: designatedSpender}),
+        'insufficient allowance'
+      )
+    })
+
+    it('Should not let a non approved sender spend from the account', async () => {
+      await expectRevert(
+        token.transferFrom(sender, recipient, tokens(5), {from: deployer}),
+        'insufficient allowance'
+      )
+    })
   })
 
 })

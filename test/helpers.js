@@ -1,3 +1,7 @@
+exports.toBN = (value) => {
+  return web3.utils.toBN(value)
+}
+
 exports.ether = (value) => {
   return web3.utils.toBN(
     // converts Ether value to Wei
